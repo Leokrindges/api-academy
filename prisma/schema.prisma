@@ -1,0 +1,101 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Student {
+  id String @id @db.Uuid @default(uuid())
+  name String @db.VarChar(255)
+  documentIdentification String @db.VarChar(11) @unique @map("document_identification")
+  emailAddress String @db.VarChar(255) @unique @map("email_address")
+  age Int? @db.SmallInt 
+  password String @db.Text 
+  authToken String? @db.Text @map("auth_token")
+  deleted Boolean @db.Boolean @default(false)
+  createdAt DateTime @db.Timestamp() @map("created_at") @default(now())
+  updatedAt DateTime @db.Timestamp() @map("updated_at") @updatedAt @default(now())
+  deletedAt DateTime? @db.Timestamp() @map("deleted_at")
+
+  address Address?
+  assessments Assessment[]
+  enrollments Enrollment[]
+
+  @@map("students")
+}
+
+model Address {
+  id String @id @db.Uuid @default(uuid())
+  street String @db.VarChar(255)
+  addressNumber String @db.VarChar(255) @map("address_number")
+  zipCode String @db.VarChar(8) @map("zip_code")
+  complement String? @db.VarChar(255)
+  neighborhood String @db.VarChar(255)
+  city String @db.VarChar(255)
+  uf String @db.VarChar(2)
+  deleted Boolean @db.Boolean @default(false)
+  createdAt DateTime @db.Timestamp() @map("created_at") @default(now())
+  updatedAt DateTime @db.Timestamp() @map("updated_at") @updatedAt @default(now())
+  deletedAt DateTime? @db.Timestamp() @map("deleted_at")
+  studentId String @db.Uuid @map("student_id") @unique
+  
+  student Student @relation(fields: [studentId], references: [id])
+
+  @@map("addresses")
+}
+
+model Assessment {
+  id String @id @db.Uuid @default(uuid())
+  title String @db.VarChar(255)
+  rate Decimal @db.Decimal(3, 1)
+  deadline DateTime @db.Date()
+  deleted Boolean @db.Boolean @default(false)
+  createdAt DateTime @db.Timestamp() @map("created_at") @default(now())
+  updatedAt DateTime @db.Timestamp() @map("updated_at") @updatedAt @default(now())
+  deletedAt DateTime? @db.Timestamp() @map("deleted_at")
+  studentId String @db.Uuid @map("student_id")
+
+  student Student @relation(fields: [studentId], references: [id])
+
+  @@map("assessments")
+}
+
+model Class {
+  id String @id @db.Uuid @default(uuid())
+  name String @db.VarChar(255)
+  edition String @db.VarChar(255)
+  startDate DateTime @db.Date() @map("start_date")
+  endDate DateTime @db.Date() @map("end_date")
+  deleted Boolean @db.Boolean @default(false)
+  createdAt DateTime @db.Timestamp() @map("created_at") @default(now())
+  updatedAt DateTime @db.Timestamp() @map("updated_at") @updatedAt @default(now())
+  deletedAt DateTime? @db.Timestamp() @map("deleted_at")
+  
+  enrollments Enrollment[]
+
+  @@map("classes")
+}
+
+model Enrollment {
+  id String @id @db.Uuid @default(uuid())
+  situation EnrollmentSituation @default(ACTIVE)
+  studentId String @db.Uuid
+  classId String @db.Uuid
+  
+  student Student @relation(fields: [studentId], references: [id])
+  class Class @relation(fields: [classId], references: [id])
+
+  @@map("enrollments")
+}
+
+enum EnrollmentSituation {
+  ACTIVE
+  INACTIVE
+  CANCELLED
+  SUSPENDED
+}
+
